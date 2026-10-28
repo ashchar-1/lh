@@ -1,0 +1,2816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LH — Cupones Digitales Animados</title>
+
+  <!-- Librerías para QR -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #050814;
+      --bg-2: #0b1020;
+      --card: rgba(18, 26, 49, 0.72);
+      --card-solid: #121a31;
+      --text: #eef2ff;
+      --muted: #9aa7c7;
+      --line: rgba(255, 255, 255, 0.10);
+      --primary: #22c55e;
+      --primary-2: #4ade80;
+      --accent: #facc15;
+      --cyan: #22d3ee;
+      --violet: #a855f7;
+      --danger: #ef4444;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    #particle-canvas,
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #confetti-canvas {
+      z-index: 90;
+    }
+
+    .aurora {
+      position: fixed;
+      inset: -20%;
+      z-index: 0;
+      overflow: hidden;
+      filter: blur(80px);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .aurora span {
+      position: absolute;
+      width: 42vw;
+      height: 42vw;
+      border-radius: 999px;
+      mix-blend-mode: screen;
+      animation: floatBlob 18s ease-in-out infinite alternate;
+    }
+
+    .aurora span:nth-child(1) {
+      background: radial-gradient(circle, rgba(34, 197, 94, 0.65), transparent 65%);
+      top: -10%;
+      left: -5%;
+    }
+
+    .aurora span:nth-child(2) {
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.55), transparent 65%);
+      top: 10%;
+      right: -10%;
+      animation-delay: -4s;
+    }
+
+    .aurora span:nth-child(3) {
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.45), transparent 65%);
+      bottom: -15%;
+      left: 20%;
+      animation-delay: -8s;
+    }
+
+    @keyframes floatBlob {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(6%, -4%, 0) scale(1.08);
+      }
+      100% {
+        transform: translate3d(-5%, 5%, 0) scale(0.96);
+      }
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(18px);
+      background: rgba(5, 8, 20, 0.62);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: #04110a;
+      background: linear-gradient(135deg, var(--primary), var(--cyan), var(--accent));
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.12) inset,
+        0 12px 35px rgba(34, 197, 94, 0.25);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes logoPulse {
+      0%, 100% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+      50% {
+        transform: scale(1.04);
+        filter: brightness(1.15);
+      }
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+
+    .brand p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    #header-session {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      padding: 26px 18px 80px;
+    }
+
+    .glass {
+      background: linear-gradient(180deg, rgba(18, 26, 49, 0.82), rgba(11, 16, 32, 0.72));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .card {
+      padding: 22px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.35), transparent 35%, rgba(34,211,238,0.25), transparent 70%, rgba(250,204,21,0.22));
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .card:hover {
+      border-color: rgba(34, 211, 238, 0.25);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    }
+
+    .card h2,
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 0.9rem;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .auth-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.02;
+      margin: 0 0 10px;
+      background: linear-gradient(90deg, #fff, var(--primary-2), var(--cyan), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shineText 6s linear infinite;
+      background-size: 300% 100%;
+    }
+
+    @keyframes shineText {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      max-width: 780px;
+      line-height: 1.65;
+      margin: 0 0 22px;
+      font-size: 1.02rem;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 14px 15px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(34, 197, 94, 0.65);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn {
+      position: relative;
+      overflow: hidden;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 18px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #06130b;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 12px 28px rgba(34, 197, 94, 0.18);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px) scale(1.01);
+      filter: brightness(1.08);
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn.secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .btn.ghost {
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .btn.danger {
+      color: white;
+      background: linear-gradient(135deg, #ef4444, #fb7185);
+    }
+
+    .btn.small {
+      padding: 9px 12px;
+      font-size: 0.92rem;
+      border-radius: 12px;
+    }
+
+    .btn.glow {
+      animation: btnGlow 2.6s ease-in-out infinite;
+    }
+
+    @keyframes btnGlow {
+      0%, 100% {
+        box-shadow: 0 12px 28px rgba(34, 197, 94, 0.18);
+      }
+      50% {
+        box-shadow: 0 16px 42px rgba(34, 211, 238, 0.28), 0 0 0 1px rgba(255,255,255,0.08) inset;
+      }
+    }
+
+    .ripple {
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0);
+      animation: rippleAnim 0.6s ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      padding: 11px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: 0.22s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .tab-btn.active {
+      color: #06130b;
+      background: linear-gradient(135deg, var(--primary), var(--cyan));
+      border-color: transparent;
+      box-shadow: 0 12px 28px rgba(34, 211, 238, 0.18);
+    }
+
+    .view {
+      animation: fadeUp 0.35s ease;
+    }
+
+    .view-enter {
+      animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -30% -45% auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(34, 197, 94, 0.22), transparent 65%);
+      pointer-events: none;
+    }
+
+    .stat-card.cyan::after {
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 65%);
+    }
+
+    .stat-card.gold::after {
+      background: radial-gradient(circle, rgba(250, 204, 21, 0.18), transparent 65%);
+    }
+
+    .stat-card.violet::after {
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.20), transparent 65%);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .notification-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.035);
+      margin-bottom: 10px;
+      animation: slideInLeft 0.3s ease;
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan);
+      flex: 0 0 auto;
+    }
+
+    .methods {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin: 14px 0 18px;
+    }
+
+    .method-btn {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: 0.2s ease;
+      display: grid;
+      gap: 6px;
+      text-align: left;
+    }
+
+    .method-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .method-btn.active {
+      border-color: rgba(34, 197, 94, 0.55);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(34, 211, 238, 0.10));
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18) inset;
+    }
+
+    .method-icon {
+      font-size: 1.4rem;
+    }
+
+    .preview-box {
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      padding: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+
+    .coupons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .coupon-card {
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.20), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(34, 211, 238, 0.16), transparent 30%),
+        linear-gradient(180deg, rgba(18, 26, 49, 0.95), rgba(10, 15, 30, 0.95));
+      box-shadow: var(--shadow);
+      transform-style: preserve-3d;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      animation: popIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.92) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .coupon-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.10) 40%, transparent 60%);
+      transform: translateX(-120%);
+      animation: shimmer 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-120%); }
+      35%, 100% { transform: translateX(120%); }
+    }
+
+    .coupon-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      width: 48px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #f59e0b);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+      display: grid;
+      place-items: center;
+      color: #2b1a00;
+      font-weight: 900;
+      font-size: 0.8rem;
+    }
+
+    .status {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+
+    .status.active {
+      color: #bbf7d0;
+      border-color: rgba(34, 197, 94, 0.25);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .status.transfer_pending {
+      color: #fde68a;
+      border-color: rgba(250, 204, 21, 0.25);
+      background: rgba(250, 204, 21, 0.12);
+    }
+
+    .coupon-amount {
+      font-size: 1.8rem;
+      font-weight: 900;
+      margin: 4px 0;
+      letter-spacing: -0.03em;
+    }
+
+    .coupon-code {
+      display: inline-block;
+      margin: 10px 0 14px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid var(--line);
+      color: var(--cyan);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .coupon-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .empty {
+      padding: 34px;
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.75; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.01); }
+    }
+
+    .inline {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .inline > * {
+      flex: 1 1 220px;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 12px 0 16px;
+    }
+
+    .radio-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      font-weight: 800;
+      transition: 0.2s ease;
+    }
+
+    .radio-pill:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .radio-pill input {
+      accent-color: var(--primary);
+      width: auto;
+    }
+
+    .receive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .qr-frame {
+      position: relative;
+      width: min(280px, 100%);
+      margin: 0 auto 14px;
+      padding: 16px;
+      border-radius: 26px;
+      background: rgba(255,255,255,0.95);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.2) inset,
+        0 20px 50px rgba(0,0,0,0.35);
+      animation: qrFloat 3.2s ease-in-out infinite;
+    }
+
+    @keyframes qrFloat {
+      0%, 100% { transform: translateY(0) rotateX(0deg); }
+      50% { transform: translateY(-6px) rotateX(3deg); }
+    }
+
+    .qr-frame::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 30px;
+      border: 1px solid rgba(34, 211, 238, 0.35);
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.18);
+      pointer-events: none;
+      animation: ringPulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes ringPulse {
+      0%, 100% { opacity: 0.35; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+
+    .qr-frame canvas {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 14px;
+    }
+
+    .history-item,
+    .transfer-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.035);
+      margin-bottom: 10px;
+      animation: slideInRight 0.28s ease;
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .history-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,211,238,0.16));
+      border: 1px solid var(--line);
+      font-size: 1.1rem;
+      flex: 0 0 auto;
+    }
+
+    .history-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .history-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .history-meta {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(2, 5, 12, 0.72);
+      backdrop-filter: blur(10px);
+    }
+
+    .modal.show {
+      display: flex;
+      animation: modalFade 0.22s ease;
+    }
+
+    @keyframes modalFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-card {
+      width: min(560px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      padding: 22px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(18, 26, 49, 0.98), rgba(8, 12, 24, 0.98));
+      box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+      transform: scale(0.92);
+      opacity: 0;
+      transition: 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .modal.show .modal-card {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+    }
+
+    .close-x {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    #qr-reader {
+      width: 100%;
+      min-height: 280px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #000;
+      margin-bottom: 14px;
+    }
+
+    #qr-reader video {
+      border-radius: 18px !important;
+    }
+
+    .progress-wrap {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      margin: 14px 0;
+      border: 1px solid var(--line);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), var(--cyan), var(--accent));
+      transition: width 0.45s ease;
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
+    }
+
+    .step-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      color: var(--muted);
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.03);
+      transition: 0.25s ease;
+    }
+
+    .step.active {
+      color: var(--text);
+      border-color: rgba(34, 211, 238, 0.25);
+      background: rgba(34, 211, 238, 0.08);
+      transform: translateX(4px);
+    }
+
+    .step.done {
+      color: #bbf7d0;
+      border-color: rgba(34, 197, 94, 0.22);
+      background: rgba(34, 197, 94, 0.08);
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.18);
+      border-top-color: var(--cyan);
+      animation: spin 0.8s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .check-wrap {
+      display: grid;
+      place-items: center;
+      padding: 10px 0 4px;
+    }
+
+    .check-circle {
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle, rgba(34,197,94,0.22), rgba(34,197,94,0.06));
+      border: 1px solid rgba(34,197,94,0.35);
+      box-shadow: 0 0 40px rgba(34,197,94,0.18);
+      animation: successPop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes successPop {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .check-svg {
+      width: 46px;
+      height: 46px;
+    }
+
+    .check-path {
+      stroke: var(--primary-2);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
+      animation: drawCheck 0.6s 0.15s ease forwards;
+    }
+
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
+    }
+
+    #toast-container {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 120;
+      display: grid;
+      gap: 10px;
+      width: min(360px, calc(100vw - 36px));
+    }
+
+    .toast {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(6, 10, 20, 0.96));
+      color: white;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+      transform: translateY(16px);
+      opacity: 0;
+      animation: toastIn 0.28s ease forwards;
+      font-weight: 700;
+    }
+
+    .toast.out {
+      animation: toastOut 0.25s ease forwards;
+    }
+
+    .toast.success {
+      border-color: rgba(34, 197, 94, 0.35);
+      background: linear-gradient(135deg, rgba(5, 46, 22, 0.96), rgba(20, 83, 45, 0.96));
+    }
+
+    .toast.error {
+      border-color: rgba(239, 68, 68, 0.35);
+      background: linear-gradient(135deg, rgba(69, 10, 10, 0.96), rgba(127, 29, 29, 0.96));
+    }
+
+    .toast.info {
+      border-color: rgba(34, 211, 238, 0.35);
+      background: linear-gradient(135deg, rgba(8, 47, 73, 0.96), rgba(12, 74, 110, 0.96));
+    }
+
+    @keyframes toastIn {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes toastOut {
+      to { transform: translateY(12px); opacity: 0; }
+    }
+
+    .demo-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .mt {
+      margin-top: 12px;
+    }
+
+    .break {
+      word-break: break-all;
+    }
+
+    @media (max-width: 760px) {
+      .header-inner {
+        padding: 12px 14px;
+      }
+
+      main {
+        padding: 18px 14px 70px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .hero-title {
+        font-size: 2.1rem;
+      }
+
+      .coupon-amount {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particle-canvas"></canvas>
+  <div class="aurora">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo">LH</div>
+        <div>
+          <h1>LH</h1>
+          <p>Cupones digitales animados</p>
+        </div>
+      </div>
+
+      <div id="header-session"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= AUTENTICACIÓN ================= -->
+    <section id="auth-view">
+      <div class="card" style="margin-bottom: 18px;">
+        <h2 class="hero-title">Compra, envía y recibe cupones LH</h2>
+        <p class="hero-sub">
+          Demo visual para simular la compra de cupones LH, transferencias entre usuarios registrados
+          y recepción mediante QR, con animaciones modernas y experiencia tipo app financiera.
+        </p>
+
+        <div class="demo-box">
+          <strong>Cuentas demo:</strong><br />
+          Usuario 1: <code>ana@lh.local</code> / <code>12345678</code><br />
+          Usuario 2: <code>carlos@lh.local</code> / <code>12345678</code>
+        </div>
+      </div>
+
+      <div class="auth-grid">
+        <div class="card tilt">
+          <h3>Iniciar sesión</h3>
+          <form id="login-form" class="stack">
+            <label>
+              Email
+              <input name="email" type="email" required placeholder="ana@lh.local" />
+            </label>
+
+            <label>
+              Contraseña
+              <input name="password" type="password" required placeholder="********" />
+            </label>
+
+            <button type="submit" class="btn glow">Entrar</button>
+          </form>
+        </div>
+
+        <div class="card tilt">
+          <h3>Crear cuenta</h3>
+          <form id="register-form" class="stack">
+            <label>
+              Nombre
+              <input name="name" required placeholder="Tu nombre" />
+            </label>
+
+            <label>
+              Email
+              <input name="email" type="email" required placeholder="tu@correo.com" />
+            </label>
+
+            <label>
+              Contraseña
+              <input name="password" type="password" minlength="8" required placeholder="Mínimo 8 caracteres" />
+            </label>
+
+            <button type="submit" class="btn secondary">Registrarme</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= APP ================= -->
+    <section id="app-view" class="hidden">
+      <nav class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="home">Inicio</button>
+        <button class="tab-btn" data-tab="buy">Comprar LH</button>
+        <button class="tab-btn" data-tab="wallet">Billetera</button>
+        <button class="tab-btn" data-tab="send">Enviar</button>
+        <button class="tab-btn" data-tab="receive">Recibir</button>
+        <button class="tab-btn" data-tab="history">Historial</button>
+      </nav>
+
+      <!-- HOME -->
+      <section id="view-home" class="view">
+        <div class="card">
+          <h2 id="home-greeting">Hola</h2>
+          <p class="muted">Bienvenido a tu panel LH simulado.</p>
+
+          <div class="quick-actions mt">
+            <button class="btn" data-go="buy">Comprar LH</button>
+            <button class="btn secondary" data-go="send">Enviar LH</button>
+            <button class="btn secondary" data-go="receive">Recibir con QR</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="card stat-card tilt">
+            <span class="stat-label">Cupones activos</span>
+            <strong class="stat-value" id="stat-coupons">0</strong>
+          </div>
+
+          <div class="card stat-card cyan tilt">
+            <span class="stat-label">Valor en Bs</span>
+            <strong class="stat-value" id="stat-ves">0 Bs</strong>
+          </div>
+
+          <div class="card stat-card gold tilt">
+            <span class="stat-label">Equivalente USDT</span>
+            <strong class="stat-value" id="stat-usdt">0 USDT</strong>
+          </div>
+
+          <div class="card stat-card violet tilt">
+            <span class="stat-label">Por reclamar</span>
+            <strong class="stat-value" id="stat-pending">0</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="modal-header">
+            <h3>Notificaciones</h3>
+            <button id="mark-read-btn" class="btn small secondary">Marcar leídas</button>
+          </div>
+          <div id="home-notifications"></div>
+        </div>
+      </section>
+
+      <!-- BUY -->
+      <section id="view-buy" class="view hidden">
+        <div class="card">
+          <h3>Comprar cupón LH</h3>
+          <p class="muted">
+            Simula el pago en bolívares y emite un cupón LH respaldado contablemente en USDT simulado.
+          </p>
+
+          <form id="buy-form" class="stack">
+            <label>
+              Monto en Bs
+              <input id="buy-amount" type="number" min="1" step="0.01" placeholder="900" required />
+            </label>
+
+            <div class="preview-box" id="buy-preview">
+              Ingresa un monto para ver la equivalencia.
+            </div>
+
+            <div>
+              <strong>Método de pago simulado</strong>
+              <div class="methods" id="payment-methods">
+                <button type="button" class="method-btn active" data-method="Pago Móvil">
+                  <span class="method-icon">📲</span>
+                  Pago Móvil
+                </button>
+
+                <button type="button" class="method-btn" data-method="Zelle">
+                  <span class="method-icon">💵</span>
+                  Zelle
+                </button>
+
+                <button type="button" class="method-btn" data-method="Binance Pay">
+                  <span class="method-icon">🪙</span>
+                  Binance Pay
+                </button>
+
+                <button type="button" class="method-btn" data-method="Efectivo">
+                  <span class="method-icon">💰</span>
+                  Efectivo
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn glow">Pagar y emitir LH</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- WALLET -->
+      <section id="view-wallet" class="view hidden">
+        <div class="card">
+          <h3>Mis cupones LH</h3>
+          <p class="muted">Aquí ves los cupones que posees actualmente.</p>
+        </div>
+
+        <div id="wallet-list" class="coupons-grid"></div>
+      </section>
+
+      <!-- SEND -->
+      <section id="view-send" class="view hidden">
+        <div class="card">
+          <h3>Enviar un cupón LH</h3>
+          <p class="muted">
+            Puedes enviar directamente a un usuario registrado o generar un QR de envío para que la otra persona lo escanee y reclame.
+          </p>
+
+          <form id="send-form" class="stack">
+            <label>
+              Cupón a enviar
+              <select id="send-coupon" required></select>
+            </label>
+
+            <label>
+              Correo del destinatario
+              <input id="send-recipient" type="email" placeholder="carlos@lh.local" required />
+            </label>
+
+            <div class="inline">
+              <button type="button" id="scan-recipient-btn" class="btn secondary">
+                Escanear QR de usuario
+              </button>
+            </div>
+
+            <div class="radio-group">
+              <label class="radio-pill">
+                <input type="radio" name="send-mode" value="direct" checked />
+                Envío directo
+              </label>
+
+              <label class="radio-pill">
+                <input type="radio" name="send-mode" value="qr" />
+                Generar QR para reclamar
+              </label>
+            </div>
+
+            <button type="submit" class="btn glow">Enviar LH</button>
+          </form>
+
+          <div id="send-result" class="mt"></div>
+        </div>
+      </section>
+
+      <!-- RECEIVE -->
+      <section id="view-receive" class="view hidden">
+        <div class="receive-grid">
+          <div class="card">
+            <h3>Mi QR para recibir</h3>
+            <p class="muted">
+              Comparte este QR para que otro usuario te identifique y te envíe un cupón LH.
+            </p>
+
+            <div class="qr-frame">
+              <canvas id="my-qr-canvas"></canvas>
+            </div>
+
+            <p class="center muted small break" id="my-qr-text"></p>
+
+            <div class="center">
+              <button id="copy-email-btn" class="btn secondary small">Copiar mi correo</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Reclamar con QR</h3>
+            <p class="muted">
+              Si alguien te generó un QR de envío, escanéalo aquí para reclamar tu cupón LH.
+            </p>
+
+            <button id="scan-transfer-btn" class="btn glow">Escanear QR de envío</button>
+
+            <div class="mt">
+              <strong>Transferencias pendientes a mi favor</strong>
+              <div id="pending-transfers" class="mt"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section id="view-history" class="view hidden">
+        <div class="card">
+          <h3>Historial</h3>
+          <p class="muted">Movimientos simulados de compra, envío y recepción.</p>
+        </div>
+
+        <div id="history-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <!-- QR MODAL -->
+  <div id="qr-modal" class="modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="qr-modal-title">QR</h3>
+        <button class="close-x" id="close-qr-modal">×</button>
+      </div>
+
+      <div class="qr-frame">
+        <canvas id="qr-modal-canvas"></canvas>
+      </div>
+
+      <p class="muted small center break" id="qr-modal-text"></p>
+    </div>
+  </div>
+
+  <!-- SCANNER MODAL -->
+  <div id="scanner-modal" class="modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Escanear QR</h3>
+        <button class="close-x" id="close-scanner-modal">×</button>
+      </div>
+
+      <div id="qr-reader"></div>
+
+      <div class="stack">
+        <label>
+          O ingresa el código manualmente
+          <input id="manual-scan-input" placeholder="LHUSER|... o LHTRANSFER|..." />
+        </label>
+
+        <button id="manual-scan-btn" class="btn secondary">Procesar código</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROCESSING MODAL -->
+  <div id="processing-modal" class="modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Procesando</h3>
+        <span></span>
+      </div>
+
+      <div class="check-wrap" id="processing-success" style="display:none;">
+        <div class="check-circle">
+          <svg class="check-svg" viewBox="0 0 52 52">
+            <path class="check-path" d="M14 27l8 8 16-18" />
+          </svg>
+        </div>
+      </div>
+
+      <p id="processing-step" class="muted">Preparando...</p>
+
+      <div class="progress-wrap">
+        <div class="progress-bar" id="processing-bar"></div>
+      </div>
+
+      <div class="step-list" id="processing-steps"></div>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+  <div id="toast-container"></div>
+
+  <script>
+    const LS_DB = "lh_web_demo_v4_db";
+    const LS_SESSION = "lh_web_demo_v4_session";
+
+    const RATE_BS_PER_USDT = 36;
+    const MAX_COUPON_VES = 10000;
+
+    let db = null;
+    let session = { userId: null };
+    let currentTab = "home";
+    let selectedPaymentMethod = "Pago Móvil";
+    let scanContext = "transfer";
+    let html5Qrcode = null;
+    let scannerRunning = false;
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[c]));
+    }
+
+    function round2(value) {
+      const n = Number(value || 0);
+      if (!Number.isFinite(n)) return 0;
+      return Math.round((n + Number.EPSILON) * 100) / 100;
+    }
+
+    function round6(value) {
+      const n = Number(value || 0);
+      if (!Number.isFinite(n)) return 0;
+      return Math.round((n + Number.EPSILON) * 1e6) / 1e6;
+    }
+
+    function money(value) {
+      return Number(value || 0).toLocaleString("es-VE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function usdt(value) {
+      return Number(value || 0).toFixed(2);
+    }
+
+    function fmtDate(iso) {
+      try {
+        return new Date(iso).toLocaleString("es-VE");
+      } catch {
+        return String(iso || "");
+      }
+    }
+
+    function uid(prefix) {
+      return `${prefix}_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36).slice(-5)}`;
+    }
+
+    function randomCode() {
+      const a = Math.random().toString(36).slice(2, 6).toUpperCase();
+      const b = Math.random().toString(36).slice(2, 6).toUpperCase();
+      const c = Math.random().toString(36).slice(2, 4).toUpperCase();
+      return `LH-${a}-${b}-${c}`;
+    }
+
+    function simpleHash(text) {
+      let hash = 5381;
+      const str = String(text || "");
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
+        hash = hash & hash;
+      }
+      return (hash >>> 0).toString(16);
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function defaultDB() {
+      return {
+        users: [],
+        coupons: [],
+        transfers: [],
+        notifications: [],
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    function seedDB() {
+      const now = new Date().toISOString();
+
+      const ana = {
+        id: "usr_ana",
+        name: "Ana López",
+        email: "ana@lh.local",
+        passwordHash: simpleHash("12345678"),
+        createdAt: now
+      };
+
+      const carlos = {
+        id: "usr_carlos",
+        name: "Carlos Pérez",
+        email: "carlos@lh.local",
+        passwordHash: simpleHash("12345678"),
+        createdAt: now
+      };
+
+      const coupon = {
+        id: "cpn_demo_ana",
+        code: "LH-DEMO-ANA-900",
+        ownerId: ana.id,
+        createdBy: ana.id,
+        amountVes: 900,
+        usdtAmount: round6(900 / RATE_BS_PER_USDT),
+        status: "active",
+        method: "Demo",
+        createdAt: now
+      };
+
+      const notification = {
+        id: uid("ntf"),
+        userId: carlos.id,
+        message: "Ana tiene un cupón LH disponible. Prueba enviarlo o reclamarlo con QR.",
+        read: false,
+        createdAt: now
+      };
+
+      return {
+        users: [ana, carlos],
+        coupons: [coupon],
+        transfers: [],
+        notifications: [notification],
+        createdAt: now
+      };
+    }
+
+    function normalizeDB(input) {
+      const base = defaultDB();
+
+      if (!input || typeof input !== "object") {
+        return seedDB();
+      }
+
+      const out = {
+        ...base,
+        ...input,
+        users: Array.isArray(input.users) ? input.users : [],
+        coupons: Array.isArray(input.coupons) ? input.coupons : [],
+        transfers: Array.isArray(input.transfers) ? input.transfers : [],
+        notifications: Array.isArray(input.notifications) ? input.notifications : []
+      };
+
+      if (!out.users.length) {
+        return seedDB();
+      }
+
+      return out;
+    }
+
+    function loadDB() {
+      try {
+        const raw = localStorage.getItem(LS_DB);
+        if (!raw) {
+          const seeded = seedDB();
+          localStorage.setItem(LS_DB, JSON.stringify(seeded));
+          return seeded;
+        }
+        return normalizeDB(JSON.parse(raw));
+      } catch (error) {
+        console.error(error);
+        const seeded = seedDB();
+        localStorage.setItem(LS_DB, JSON.stringify(seeded));
+        return seeded;
+      }
+    }
+
+    function saveDB() {
+      localStorage.setItem(LS_DB, JSON.stringify(db));
+    }
+
+    function loadSession() {
+      try {
+        const raw = localStorage.getItem(LS_SESSION);
+        if (!raw) return { userId: null };
+        const parsed = JSON.parse(raw);
+        return { userId: parsed && parsed.userId ? String(parsed.userId) : null };
+      } catch {
+        return { userId: null };
+      }
+    }
+
+    function saveSession() {
+      localStorage.setItem(LS_SESSION, JSON.stringify(session));
+    }
+
+    function currentUser() {
+      if (!session.userId) return null;
+      return db.users.find((u) => u.id === session.userId) || null;
+    }
+
+    function getUserById(id) {
+      return db.users.find((u) => u.id === id) || null;
+    }
+
+    function getUserByEmail(email) {
+      const clean = String(email || "").trim().toLowerCase();
+      return db.users.find((u) => u.email.toLowerCase() === clean) || null;
+    }
+
+    function getCouponByCode(code) {
+      return db.coupons.find((c) => c.code === code) || null;
+    }
+
+    function getCouponById(id) {
+      return db.coupons.find((c) => c.id === id) || null;
+    }
+
+    function getTransferById(id) {
+      return db.transfers.find((t) => t.id === id) || null;
+    }
+
+    function myCoupons(status = null) {
+      const user = currentUser();
+      if (!user) return [];
+      return db.coupons
+        .filter((c) => c.ownerId === user.id)
+        .filter((c) => !status || c.status === status)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    function statusLabel(status) {
+      const map = {
+        active: "Activo",
+        transfer_pending: "Enviando"
+      };
+      return map[status] || status;
+    }
+
+    function notify(userId, message) {
+      db.notifications.unshift({
+        id: uid("ntf"),
+        userId,
+        message,
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+
+      if (db.notifications.length > 200) {
+        db.notifications.length = 200;
+      }
+    }
+
+    function toast(message, type = "success") {
+      const container = $("#toast-container");
+      const el = document.createElement("div");
+      el.className = `toast ${type}`;
+      el.textContent = message;
+      container.appendChild(el);
+
+      setTimeout(() => {
+        el.classList.add("out");
+        setTimeout(() => el.remove(), 260);
+      }, 3200);
+    }
+
+    function openModal(id) {
+      $(id).classList.add("show");
+    }
+
+    function closeModal(id) {
+      $(id).classList.remove("show");
+    }
+
+    function generateQR(canvasSelector, text) {
+      const canvas = $(canvasSelector);
+      if (!canvas) return;
+
+      if (window.QRCode) {
+        canvas.style.display = "block";
+        QRCode.toCanvas(canvas, text, {
+          width: 240,
+          margin: 1,
+          color: {
+            dark: "#0b1020",
+            light: "#ffffff"
+          }
+        }, (err) => {
+          if (err) {
+            console.error(err);
+            canvas.style.display = "none";
+          }
+        });
+      } else {
+        canvas.style.display = "none";
+      }
+    }
+
+    function openQRModal(title, text) {
+      $("#qr-modal-title").textContent = title;
+      $("#qr-modal-text").textContent = text;
+      openModal("#qr-modal");
+      generateQR("#qr-modal-canvas", text);
+    }
+
+    function createCoupon(ownerId, amountVes, method) {
+      const coupon = {
+        id: uid("cpn"),
+        code: randomCode(),
+        ownerId,
+        createdBy: ownerId,
+        amountVes: round2(amountVes),
+        usdtAmount: round6(amountVes / RATE_BS_PER_USDT),
+        status: "active",
+        method,
+        createdAt: new Date().toISOString()
+      };
+
+      db.coupons.unshift(coupon);
+      saveDB();
+      return coupon;
+    }
+
+    function directTransfer(coupon, fromUser, toUser) {
+      coupon.ownerId = toUser.id;
+      coupon.status = "active";
+
+      const transfer = {
+        id: uid("trf"),
+        couponId: coupon.id,
+        couponCode: coupon.code,
+        fromUserId: fromUser.id,
+        toUserId: toUser.id,
+        amountVes: coupon.amountVes,
+        status: "completed",
+        mode: "direct",
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString()
+      };
+
+      db.transfers.unshift(transfer);
+
+      notify(toUser.id, `Recibiste un LH de ${money(coupon.amountVes)} Bs enviado por ${fromUser.name}.`);
+      notify(fromUser.id, `Enviaste un LH de ${money(coupon.amountVes)} Bs a ${toUser.name}.`);
+
+      saveDB();
+      return transfer;
+    }
+
+    function createPendingTransfer(coupon, fromUser, toUser) {
+      coupon.status = "transfer_pending";
+
+      const transfer = {
+        id: uid("trf"),
+        couponId: coupon.id,
+        couponCode: coupon.code,
+        fromUserId: fromUser.id,
+        toUserId: toUser.id,
+        amountVes: coupon.amountVes,
+        status: "pending",
+        mode: "qr",
+        createdAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      db.transfers.unshift(transfer);
+
+      notify(toUser.id, `${fromUser.name} te envió un LH de ${money(coupon.amountVes)} Bs. Escanea el QR o reclámalo.`);
+      notify(fromUser.id, `Generaste un QR de envío para ${toUser.name}.`);
+
+      saveDB();
+      return transfer;
+    }
+
+    function claimTransfer(transferId) {
+      const user = currentUser();
+      if (!user) throw new Error("Debes iniciar sesión.");
+
+      const transfer = getTransferById(transferId);
+      if (!transfer) throw new Error("Transferencia no encontrada.");
+
+      if (transfer.toUserId !== user.id) {
+        throw new Error("Esta transferencia no es para ti.");
+      }
+
+      if (transfer.status !== "pending") {
+        throw new Error("Esta transferencia ya fue procesada.");
+      }
+
+      const coupon = getCouponById(transfer.couponId);
+      if (!coupon) throw new Error("Cupón no encontrado.");
+
+      coupon.ownerId = user.id;
+      coupon.status = "active";
+
+      transfer.status = "completed";
+      transfer.completedAt = new Date().toISOString();
+
+      const fromUser = getUserById(transfer.fromUserId);
+
+      notify(user.id, `Reclamaste un LH de ${money(coupon.amountVes)} Bs.`);
+      if (fromUser) {
+        notify(fromUser.id, `${user.name} reclamó tu envío de ${money(coupon.amountVes)} Bs.`);
+      }
+
+      saveDB();
+      celebrate();
+      toast("Cupón LH reclamado correctamente");
+      renderAll();
+    }
+
+    function renderAll() {
+      renderHeader();
+      renderAuthVisibility();
+      if (currentUser()) {
+        renderHome();
+        renderBuy();
+        renderWallet();
+        renderSend();
+        renderReceive();
+        renderHistory();
+        switchTab(currentTab, false);
+      }
+      applyTilt();
+    }
+
+    function renderHeader() {
+      const user = currentUser();
+      const box = $("#header-session");
+
+      if (!user) {
+        box.innerHTML = "";
+        return;
+      }
+
+      box.innerHTML = `
+        <span>${esc(user.name)}</span>
+        <button id="logout-btn" class="btn small ghost">Salir</button>
+      `;
+
+      $("#logout-btn").onclick = () => {
+        session.userId = null;
+        saveSession();
+        currentTab = "home";
+        renderAll();
+        toast("Sesión cerrada", "info");
+      };
+    }
+
+    function renderAuthVisibility() {
+      const logged = !!currentUser();
+      $("#auth-view").classList.toggle("hidden", logged);
+      $("#app-view").classList.toggle("hidden", !logged);
+    }
+
+    function switchTab(tab, rerender = true) {
+      currentTab = tab;
+
+      $$(".tab-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+
+      $$(".view").forEach((view) => view.classList.add("hidden"));
+
+      const panel = $("#view-" + tab);
+      if (panel) {
+        panel.classList.remove("hidden");
+        panel.classList.remove("view-enter");
+        void panel.offsetWidth;
+        panel.classList.add("view-enter");
+      }
+
+      if (rerender) renderAll();
+    }
+
+    function renderHome() {
+      const user = currentUser();
+      if (!user) return;
+
+      $("#home-greeting").textContent = `Hola, ${user.name}`;
+
+      const active = myCoupons("active");
+      const pendingTransfers = db.transfers.filter((t) => t.toUserId === user.id && t.status === "pending");
+
+      const totalVes = active.reduce((sum, c) => sum + c.amountVes, 0);
+      const totalUsdt = active.reduce((sum, c) => sum + c.usdtAmount, 0);
+
+      animateCount($("#stat-coupons"), active.length, 0, "", "");
+      animateCount($("#stat-ves"), totalVes, 2, "", " Bs");
+      animateCount($("#stat-usdt"), totalUsdt, 2, "", " USDT");
+      animateCount($("#stat-pending"), pendingTransfers.length, 0, "", "");
+
+      const notifications = db.notifications
+        .filter((n) => n.userId === user.id)
+        .slice(0, 8);
+
+      const box = $("#home-notifications");
+
+      if (!notifications.length) {
+        box.innerHTML = `<div class="empty">Sin notificaciones todavía.</div>`;
+        return;
+      }
+
+      box.innerHTML = notifications.map((n) => `
+        <div class="notification-item">
+          <div class="dot" style="${n.read ? "opacity:.25; box-shadow:none;" : ""}"></div>
+          <div>
+            <div>${esc(n.message)}</div>
+            <div class="muted small">${esc(fmtDate(n.createdAt))}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderBuy() {
+      updateBuyPreview();
+    }
+
+    function updateBuyPreview() {
+      const amount = round2(parseFloat($("#buy-amount").value || "0"));
+      const preview = $("#buy-preview");
+
+      if (!amount || amount <= 0) {
+        preview.innerHTML = "Ingresa un monto para ver la equivalencia.";
+        return;
+      }
+
+      const usdtAmount = amount / RATE_BS_PER_USDT;
+      const exceeds = amount > MAX_COUPON_VES;
+
+      preview.innerHTML = `
+        <strong>Resumen simulado</strong><br />
+        Monto: ${money(amount)} Bs<br />
+        Equivalencia: ${usdt(usdtAmount)} USDT<br />
+        Tasa demo: ${money(RATE_BS_PER_USDT)} Bs / USDT<br />
+        Método: ${esc(selectedPaymentMethod)}<br />
+        ${exceeds ? `<span style="color:#fca5a5">Supera el máximo demo de ${money(MAX_COUPON_VES)} Bs</span>` : `<span style="color:#86efac">Listo para emitir</span>`}
+      `;
+    }
+
+    function renderWallet() {
+      const coupons = myCoupons();
+      const list = $("#wallet-list");
+
+      if (!coupons.length) {
+        list.innerHTML = `<div class="empty">Todavía no tienes cupones LH. Ve a <strong>Comprar LH</strong>.</div>`;
+        return;
+      }
+
+      list.innerHTML = coupons.map((c) => `
+        <article class="coupon-card tilt">
+          <div class="coupon-top">
+            <div class="chip">LH</div>
+            <span class="status ${esc(c.status)}">${esc(statusLabel(c.status))}</span>
+          </div>
+
+          <div class="coupon-amount">${money(c.amountVes)} Bs</div>
+          <div class="muted">${usdt(c.usdtAmount)} USDT simulados</div>
+
+          <div class="coupon-code">${esc(c.code)}</div>
+
+          <div class="muted small">
+            Creado: ${esc(fmtDate(c.createdAt))}<br />
+            Método: ${esc(c.method || "—")}
+          </div>
+
+          <div class="coupon-actions">
+            <button class="btn small secondary" data-coupon-qr="${esc(c.code)}">Ver QR</button>
+            <button class="btn small" data-coupon-send="${esc(c.code)}" ${c.status !== "active" ? "disabled" : ""}>Enviar</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderSend() {
+      const select = $("#send-coupon");
+      const coupons = myCoupons("active");
+
+      const previous = select.value;
+
+      select.innerHTML = coupons.length
+        ? coupons.map((c) => `
+          <option value="${esc(c.code)}">
+            ${esc(c.code)} • ${money(c.amountVes)} Bs
+          </option>
+        `).join("")
+        : `<option value="">No tienes cupones activos</option>`;
+
+      if (previous && coupons.some((c) => c.code === previous)) {
+        select.value = previous;
+      }
+
+      const submitBtn = $("#send-form button[type='submit']");
+      if (submitBtn) submitBtn.disabled = !coupons.length;
+    }
+
+    function renderReceive() {
+      const user = currentUser();
+      if (!user) return;
+
+      const payload = `LHUSER|${user.email}`;
+      $("#my-qr-text").textContent = payload;
+      generateQR("#my-qr-canvas", payload);
+
+      const pending = db.transfers
+        .filter((t) => t.toUserId === user.id && t.status === "pending")
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const box = $("#pending-transfers");
+
+      if (!pending.length) {
+        box.innerHTML = `<div class="empty">No tienes transferencias pendientes.</div>`;
+        return;
+      }
+
+      box.innerHTML = pending.map((t) => {
+        const from = getUserById(t.fromUserId);
+        const coupon = getCouponById(t.couponId);
+        return `
+          <div class="transfer-item">
+            <div>
+              <strong>${money(t.amountVes)} Bs</strong>
+              <div class="muted small">
+                De ${esc(from ? from.name : "Usuario")} • ${esc(coupon ? coupon.code : "—")}
+              </div>
+            </div>
+
+            <div class="stack" style="gap:8px;">
+              <button class="btn small" data-claim="${esc(t.id)}">Reclamar</button>
+              <button class="btn small secondary" data-show-transfer="${esc(t.id)}">Ver QR</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderHistory() {
+      const user = currentUser();
+      if (!user) return;
+
+      const events = [];
+
+      db.coupons
+        .filter((c) => c.createdBy === user.id)
+        .forEach((c) => {
+          events.push({
+            date: c.createdAt,
+            icon: "⚡",
+            title: `Compraste un LH de ${money(c.amountVes)} Bs`,
+            meta: `${c.code} • ${esc(c.method || "Simulado")}`
+          });
+        });
+
+      db.transfers
+        .filter((t) => t.fromUserId === user.id || t.toUserId === user.id)
+        .forEach((t) => {
+          const from = getUserById(t.fromUserId);
+          const to = getUserById(t.toUserId);
+          const coupon = getCouponById(t.couponId);
+
+          if (t.fromUserId === user.id) {
+            events.push({
+              date: t.createdAt,
+              icon: "📤",
+              title: t.status === "completed"
+                ? `Enviaste ${money(t.amountVes)} Bs a ${to ? to.name : "usuario"}`
+                : `Generaste envío pendiente de ${money(t.amountVes)} Bs para ${to ? to.name : "usuario"}`,
+              meta: `${coupon ? coupon.code : "—"} • ${t.mode === "qr" ? "QR" : "Directo"}`
+            });
+          }
+
+          if (t.toUserId === user.id && t.status === "completed") {
+            events.push({
+              date: t.completedAt || t.createdAt,
+              icon: "📥",
+              title: `Recibiste ${money(t.amountVes)} Bs de ${from ? from.name : "usuario"}`,
+              meta: `${coupon ? coupon.code : "—"}`
+            });
+          }
+        });
+
+      events.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const box = $("#history-list");
+
+      if (!events.length) {
+        box.innerHTML = `<div class="empty">Aún no hay movimientos.</div>`;
+        return;
+      }
+
+      box.innerHTML = events.slice(0, 50).map((e) => `
+        <div class="history-item">
+          <div class="history-icon">${e.icon}</div>
+          <div class="history-main">
+            <div class="history-title">${esc(e.title)}</div>
+            <div class="history-meta">${esc(e.meta)} • ${esc(fmtDate(e.date))}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function animateCount(el, end, decimals = 0, prefix = "", suffix = "") {
+      if (!el) return;
+
+      const start = Number(el.dataset.value || 0);
+      const duration = 850;
+      const startTime = performance.now();
+
+      function frame(now) {
+        const p = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const value = start + (end - start) * eased;
+
+        el.textContent = prefix + value.toLocaleString("es-VE", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }) + suffix;
+
+        if (p < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          el.dataset.value = end;
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    async function runProcessing(steps, successMessage = "Operación completada") {
+      const modal = $("#processing-modal");
+      const stepText = $("#processing-step");
+      const bar = $("#processing-bar");
+      const list = $("#processing-steps");
+      const success = $("#processing-success");
+
+      success.style.display = "none";
+      bar.style.width = "0%";
+      list.innerHTML = steps.map((s, i) => `
+        <div class="step" data-step="${i}">
+          <div class="spinner"></div>
+          <span>${esc(s)}</span>
+        </div>
+      `).join("");
+
+      openModal("#processing-modal");
+
+      for (let i = 0; i < steps.length; i++) {
+        stepText.textContent = steps[i];
+        const nodes = list.querySelectorAll(".step");
+        nodes.forEach((n, idx) => {
+          n.classList.toggle("active", idx === i);
+          n.classList.toggle("done", idx < i);
+        });
+
+        bar.style.width = `${Math.round(((i + 1) / steps.length) * 80)}%`;
+        await sleep(650 + Math.random() * 350);
+      }
+
+      const nodes = list.querySelectorAll(".step");
+      nodes.forEach((n) => {
+        n.classList.remove("active");
+        n.classList.add("done");
+      });
+
+      stepText.textContent = successMessage;
+      bar.style.width = "100%";
+      success.style.display = "grid";
+
+      await sleep(850);
+      closeModal("#processing-modal");
+    }
+
+    function celebrate() {
+      const canvas = $("#confetti-canvas");
+      const ctx = canvas.getContext("2d");
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      resize();
+
+      const colors = ["#22c55e", "#22d3ee", "#facc15", "#a855f7", "#ffffff"];
+      const pieces = Array.from({ length: 140 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.3,
+        w: 6 + Math.random() * 8,
+        h: 8 + Math.random() * 12,
+        vx: -3 + Math.random() * 6,
+        vy: 3 + Math.random() * 6,
+        rot: Math.random() * Math.PI,
+        vr: -0.2 + Math.random() * 0.4,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+
+      let frames = 0;
+      const maxFrames = 160;
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        pieces.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.06;
+          p.rot += p.vr;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        });
+
+        frames++;
+
+        if (frames < maxFrames) {
+          requestAnimationFrame(draw);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      draw();
+    }
+
+    function startParticles() {
+      const canvas = $("#particle-canvas");
+      const ctx = canvas.getContext("2d");
+
+      let w, h;
+      let particles = [];
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+
+      function init() {
+        resize();
+        const count = Math.min(80, Math.floor(w / 18));
+        particles = Array.from({ length: count }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: -0.25 + Math.random() * 0.5,
+          vy: -0.25 + Math.random() * 0.5,
+          r: 1 + Math.random() * 2.2
+        }));
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+
+        particles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(34, 211, 238, 0.45)";
+          ctx.fill();
+        });
+
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const a = particles[i];
+            const b = particles[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 130) {
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.strokeStyle = `rgba(34, 197, 94, ${0.16 * (1 - dist / 130)})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener("resize", resize);
+      init();
+      draw();
+    }
+
+    function applyTilt() {
+      $$(".tilt").forEach((card) => {
+        card.onmousemove = (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width - 0.5;
+          const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+          card.style.transform = `
+            perspective(900px)
+            rotateX(${-y * 7}deg)
+            rotateY(${x * 7}deg)
+            translateY(-4px)
+          `;
+        };
+
+        card.onmouseleave = () => {
+          card.style.transform = "";
+        };
+      });
+    }
+
+    function addRipple(e) {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+
+      const span = document.createElement("span");
+      span.className = "ripple";
+      span.style.width = span.style.height = `${size}px`;
+      span.style.left = `${x}px`;
+      span.style.top = `${y}px`;
+
+      btn.appendChild(span);
+      setTimeout(() => span.remove(), 600);
+    }
+
+    async function openScanner(context) {
+      scanContext = context;
+      openModal("#scanner-modal");
+      $("#manual-scan-input").value = "";
+
+      if (!window.Html5Qrcode) {
+        toast("Librería de escáner no disponible. Usa código manual.", "error");
+        return;
+      }
+
+      try {
+        html5Qrcode = new Html5Qrcode("qr-reader");
+        scannerRunning = true;
+
+        await html5Qrcode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          (decodedText) => {
+            handleScanResult(decodedText);
+            closeScanner();
+          },
+          () => {}
+        );
+      } catch (error) {
+        console.error(error);
+        scannerRunning = false;
+        toast("No se pudo abrir la cámara. Usa entrada manual.", "error");
+      }
+    }
+
+    async function closeScanner() {
+      closeModal("#scanner-modal");
+
+      if (html5Qrcode && scannerRunning) {
+        try {
+          await html5Qrcode.stop();
+          html5Qrcode.clear();
+        } catch {}
+      }
+
+      scannerRunning = false;
+      html5Qrcode = null;
+    }
+
+    function handleScanResult(text) {
+      const value = String(text || "").trim();
+
+      if (value.startsWith("LHUSER|")) {
+        const email = value.split("|")[1] || "";
+        $("#send-recipient").value = email;
+        switchTab("send");
+        toast("Usuario detectado", "info");
+        return;
+      }
+
+      if (value.startsWith("LHTRANSFER|")) {
+        const id = value.split("|")[1] || "";
+        try {
+          claimTransfer(id);
+        } catch (error) {
+          toast(error.message, "error");
+        }
+        return;
+      }
+
+      if (value.startsWith("LHCOUPON|")) {
+        const code = value.split("|")[1] || "";
+        const coupon = getCouponByCode(code);
+        if (!coupon) {
+          toast("Cupón no encontrado", "error");
+          return;
+        }
+        openQRModal("Cupón LH", `LHCOUPON|${coupon.code}`);
+        return;
+      }
+
+      toast("QR no reconocido", "error");
+    }
+
+    function bindEvents() {
+      document.addEventListener("click", addRipple);
+
+      $$(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
+
+      $$("[data-go]").forEach((btn) => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.go));
+      });
+
+      $("#login-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const email = String(fd.get("email") || "").trim().toLowerCase();
+        const password = String(fd.get("password") || "");
+
+        const user = getUserByEmail(email);
+        if (!user || user.passwordHash !== simpleHash(password)) {
+          toast("Credenciales inválidas", "error");
+          return;
+        }
+
+        session.userId = user.id;
+        saveSession();
+        currentTab = "home";
+        renderAll();
+        toast("Bienvenido a LH");
+        e.target.reset();
+      });
+
+      $("#register-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const name = String(fd.get("name") || "").trim();
+        const email = String(fd.get("email") || "").trim().toLowerCase();
+        const password = String(fd.get("password") || "");
+
+        if (!name || !email || password.length < 8) {
+          toast("Revisa los datos. Contraseña mínima de 8 caracteres.", "error");
+          return;
+        }
+
+        if (getUserByEmail(email)) {
+          toast("Ese email ya está registrado", "error");
+          return;
+        }
+
+        const user = {
+          id: uid("usr"),
+          name,
+          email,
+          passwordHash: simpleHash(password),
+          createdAt: new Date().toISOString()
+        };
+
+        db.users.push(user);
+        saveDB();
+
+        session.userId = user.id;
+        saveSession();
+        currentTab = "home";
+        renderAll();
+        toast("Cuenta creada");
+        e.target.reset();
+      });
+
+      $("#buy-amount").addEventListener("input", updateBuyPreview);
+
+      $("#payment-methods").addEventListener("click", (e) => {
+        const btn = e.target.closest(".method-btn");
+        if (!btn) return;
+
+        $$(".method-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedPaymentMethod = btn.dataset.method;
+        updateBuyPreview();
+      });
+
+      $("#buy-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const user = currentUser();
+        if (!user) return;
+
+        const amount = round2(parseFloat($("#buy-amount").value || "0"));
+
+        if (!amount || amount <= 0) {
+          toast("Ingresa un monto válido", "error");
+          return;
+        }
+
+        if (amount > MAX_COUPON_VES) {
+          toast(`Máximo demo: ${money(MAX_COUPON_VES)} Bs`, "error");
+          return;
+        }
+
+        await runProcessing([
+          `Confirmando pago en ${selectedPaymentMethod}...`,
+          "Reservando equivalente USDT simulado...",
+          "Firmando cupón LH...",
+          "Añadiendo a tu billetera..."
+        ], "Cupón LH emitido");
+
+        const coupon = createCoupon(user.id, amount, selectedPaymentMethod);
+        notify(user.id, `Compraste un LH de ${money(amount)} Bs con código ${coupon.code}.`);
+
+        celebrate();
+        toast(`Cupón emitido: ${coupon.code}`);
+        $("#buy-amount").value = "";
+        updateBuyPreview();
+        renderAll();
+        switchTab("wallet");
+      });
+
+      $("#wallet-list").addEventListener("click", (e) => {
+        const qrBtn = e.target.closest("[data-coupon-qr]");
+        const sendBtn = e.target.closest("[data-coupon-send]");
+
+        if (qrBtn) {
+          const code = qrBtn.dataset.couponQr;
+          openQRModal("QR del cupón", `LHCOUPON|${code}`);
+        }
+
+        if (sendBtn) {
+          const code = sendBtn.dataset.couponSend;
+          $("#send-coupon").value = code;
+          switchTab("send");
+          toast("Cupón seleccionado para envío", "info");
+        }
+      });
+
+      $("#send-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const user = currentUser();
+        if (!user) return;
+
+        const code = $("#send-coupon").value;
+        const recipientEmail = String($("#send-recipient").value || "").trim().toLowerCase();
+        const mode = document.querySelector("input[name='send-mode']:checked").value;
+
+        if (!code) {
+          toast("Selecciona un cupón", "error");
+          return;
+        }
+
+        const coupon = getCouponByCode(code);
+        if (!coupon || coupon.ownerId !== user.id || coupon.status !== "active") {
+          toast("Cupón no disponible para envío", "error");
+          return;
+        }
+
+        const recipient = getUserByEmail(recipientEmail);
+        if (!recipient) {
+          toast("El destinatario no está registrado", "error");
+          return;
+        }
+
+        if (recipient.id === user.id) {
+          toast("No puedes enviarte a ti mismo", "error");
+          return;
+        }
+
+        await runProcessing([
+          "Validando cupón LH...",
+          `Preparando envío a ${recipient.name}...`,
+          mode === "direct" ? "Transfiriendo propiedad..." : "Generando QR de reclamo...",
+          "Registrando movimiento..."
+        ], mode === "direct" ? "Envío directo completado" : "QR de envío generado");
+
+        if (mode === "direct") {
+          directTransfer(coupon, user, recipient);
+          celebrate();
+          toast(`Enviado directamente a ${recipient.name}`);
+          $("#send-result").innerHTML = `
+            <div class="preview-box">
+              <strong>Envío directo realizado</strong><br />
+              Cupón: ${esc(coupon.code)}<br />
+              Destinatario: ${esc(recipient.name)}<br />
+              Monto: ${money(coupon.amountVes)} Bs
+            </div>
+          `;
+        } else {
+          const transfer = createPendingTransfer(coupon, user, recipient);
+          const payload = `LHTRANSFER|${transfer.id}`;
+          openQRModal("QR para reclamar envío", payload);
+
+          $("#send-result").innerHTML = `
+            <div class="preview-box">
+              <strong>Envío pendiente generado</strong><br />
+              Cupón: ${esc(coupon.code)}<br />
+              Para: ${esc(recipient.name)}<br />
+              Monto: ${money(coupon.amountVes)} Bs<br />
+              El destinatario debe escanear el QR o reclamarlo desde su panel.
+            </div>
+          `;
+
+          celebrate();
+          toast("QR de envío generado");
+        }
+
+        renderAll();
+      });
+
+      $("#scan-recipient-btn").addEventListener("click", () => openScanner("recipient"));
+      $("#scan-transfer-btn").addEventListener("click", () => openScanner("transfer"));
+
+      $("#close-scanner-modal").addEventListener("click", closeScanner);
+
+      $("#manual-scan-btn").addEventListener("click", () => {
+        const value = $("#manual-scan-input").value.trim();
+        if (!value) {
+          toast("Ingresa un código", "error");
+          return;
+        }
+        handleScanResult(value);
+        closeScanner();
+      });
+
+      $("#copy-email-btn").addEventListener("click", async () => {
+        const user = currentUser();
+        if (!user) return;
+
+        try {
+          await navigator.clipboard.writeText(user.email);
+          toast("Correo copiado", "info");
+        } catch {
+          toast("No se pudo copiar automáticamente", "error");
+        }
+      });
+
+      $("#pending-transfers").addEventListener("click", (e) => {
+        const claimBtn = e.target.closest("[data-claim]");
+        const showBtn = e.target.closest("[data-show-transfer]");
+
+        if (claimBtn) {
+          try {
+            claimTransfer(claimBtn.dataset.claim);
+          } catch (error) {
+            toast(error.message, "error");
+          }
+        }
+
+        if (showBtn) {
+          const id = showBtn.dataset.showTransfer;
+          openQRModal("QR de transferencia", `LHTRANSFER|${id}`);
+        }
+      });
+
+      $("#mark-read-btn").addEventListener("click", () => {
+        const user = currentUser();
+        if (!user) return;
+
+        db.notifications.forEach((n) => {
+          if (n.userId === user.id) n.read = true;
+        });
+
+        saveDB();
+        renderHome();
+        toast("Notificaciones marcadas como leídas", "info");
+      });
+
+      $("#close-qr-modal").addEventListener("click", () => closeModal("#qr-modal"));
+
+      $$(".modal").forEach((modal) => {
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) {
+            if (modal.id === "scanner-modal") closeScanner();
+            else modal.classList.remove("show");
+          }
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        const canvas = $("#confetti-canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    }
+
+    function init() {
+      db = loadDB();
+      saveDB();
+
+      session = loadSession();
+
+      if (session.userId && !getUserById(session.userId)) {
+        session.userId = null;
+        saveSession();
+      }
+
+      bindEvents();
+      startParticles();
+      renderAll();
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
